@@ -1,9 +1,13 @@
 package com.thecookiezen.terminal
 
-import cats.Monad
 import cats.implicits._
+import cats.{Monad, Show}
+import com.softwaremill.quicklens._
 import com.thecookiezen.Config
+import com.thecookiezen.Main.Environment
+import com.thecookiezen.gcp.storage.Bucket
 import com.thecookiezen.terminal.Commands._
+import com.thecookiezen.terminal.Messages.{showBucket, showConfig}
 
 object Commands {
   sealed trait Command
@@ -21,8 +25,6 @@ object Messages {
        | Type :? for help
        |""".stripMargin
 
-  val displayConfig: Config => String = _.toString()
-
   val help: String =
     """
       |  Command      Arguments     Purpose
@@ -37,6 +39,10 @@ object Messages {
     """
       |Unrecognised command or option
       |Type :? for help""".stripMargin
+
+  implicit val showList: Show[List[_]]  = Show.show(list => list.mkString("\n"))
+  implicit val showBucket: Show[Bucket] = Show.show(b => b.toString)
+  implicit val showConfig: Show[Config] = Show.show(config => config.modify(_.gcp.credentials.value).using(_ => "*******").toString)
 }
 
 object InputParser {
@@ -65,19 +71,26 @@ trait Console[F[_]] {
 }
 
 class Terminal[F[_]: Monad](console: Console[F]) {
-  def init(config: Config): F[Command] = loop(config)(Messages.intro)
+  def init: Environment[F] => F[Command] = { env =>
+    val storage = env.storage
 
-  private def loop(config: Config): String => F[Command] =
-    msg =>
+    def loop(msg: String): F[Command] =
       for {
         command <- promptWithMsg(msg)
         result <- command match {
                    case Quit              => Monad[F].pure(Quit)
-                   case ShowHelp          => loop(config)(Messages.help)
-                   case ShowConfiguration => loop(config)(Messages.displayConfig(config))
-                   case InvalidInput      => loop(config)(Messages.invalidInputMsg)
+                   case ShowHelp          => loop(Messages.help)
+                   case ShowConfiguration => loop(Show[Config].show(env.config))
+                   case InvalidInput      => loop(Messages.invalidInputMsg)
+                   case ListBuckets =>
+                     storage.listProjectBuckets().flatMap { b =>
+                       loop(Show[List[Bucket]].show(b))
+                     }
                  }
       } yield result
+
+    loop(Messages.intro)
+  }
 
   private val prompt: F[Command] =
     for {

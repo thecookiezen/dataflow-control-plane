@@ -16,21 +16,21 @@ import scala.jdk.CollectionConverters._
 case class Bucket(name: String)
 
 trait StorageClient[F[_]] {
-  def listProjectBuckets(): F[Iterator[Bucket]]
+  def listProjectBuckets(): F[List[Bucket]]
 }
 
 class GCStorageClient(googleCloudConfig: GoogleCloudConfig) extends StorageClient[IO] with StrictLogging {
 
-  val credentials: GoogleCredentials = GoogleCredentials
+  lazy val credentials: GoogleCredentials = GoogleCredentials
     .fromStream(new ByteArrayInputStream(googleCloudConfig.credentials.value.getBytes))
     .createScoped("https://www.googleapis.com/auth/devstorage.read_only")
 
-  val requestInitializer = new HttpCredentialsAdapter(credentials)
+  lazy val requestInitializer = new HttpCredentialsAdapter(credentials)
 
-  val storage: Storage = new Storage.Builder(GoogleNetHttpTransport.newTrustedTransport, JacksonFactory.getDefaultInstance, requestInitializer).build()
+  lazy val storage: Storage = new Storage.Builder(GoogleNetHttpTransport.newTrustedTransport, JacksonFactory.getDefaultInstance, requestInitializer).build()
 
-  override def listProjectBuckets(): IO[Iterator[Bucket]] = IO.delay {
+  override def listProjectBuckets(): IO[List[Bucket]] = IO.delay {
     val x = storage.buckets().list(googleCloudConfig.projectName).execute()
-    x.getItems.iterator().asScala.map(b => Bucket(b.getName))
+    x.getItems.iterator().asScala.map(b => Bucket(b.getName)).toList
   }
 }
