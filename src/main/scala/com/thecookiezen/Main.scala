@@ -3,6 +3,7 @@ package com.thecookiezen
 import java.util.concurrent.Executors
 
 import cats.effect._
+import com.thecookiezen.gcp.storage.GCStorageClient
 import com.thecookiezen.terminal.{Console, Terminal}
 
 import scala.concurrent.ExecutionContext
@@ -14,12 +15,13 @@ object Main extends IOApp {
     val putStr: String => IO[Unit]   = value => IO(print(value))
     val readLn: IO[String]           = IO(scala.io.StdIn.readLine)  
   }
-
+  
   val terminal = new Terminal[IO](consoleInterpreter)
 
   def run(args: List[String]): IO[ExitCode] = fixedThreadPool[IO](1).use { pool =>
     for {
-      config <- GoogleCloudConfig.load(Blocker.liftExecutionContext(pool))
+      config <- Config.load(Blocker.liftExecutionContext(pool))
+      gcsStorage = new GCStorageClient(config.gcp)
       _ <- terminal.init(config)
     } yield ExitCode.Success
   }

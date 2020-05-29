@@ -1,4 +1,4 @@
-package com.thecookiezen.storage
+package com.thecookiezen.gcp.storage
 
 import java.io.ByteArrayInputStream
 
@@ -8,7 +8,7 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.storage.Storage
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
-import com.thecookiezen.GoogleCloudConfig
+import com.thecookiezen.gcp.GoogleCloudConfig
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.jdk.CollectionConverters._

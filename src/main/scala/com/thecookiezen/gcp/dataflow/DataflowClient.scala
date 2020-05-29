@@ -1,4 +1,4 @@
-package com.thecookiezen.dataflow
+package com.thecookiezen.gcp.dataflow
 
 import java.io.ByteArrayInputStream
 
@@ -9,7 +9,7 @@ import com.google.api.services.dataflow.Dataflow
 import com.google.api.services.dataflow.model.GetTemplateResponse
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
-import com.thecookiezen.GoogleCloudConfig
+import com.thecookiezen.gcp.GoogleCloudConfig
 import com.typesafe.scalalogging.StrictLogging
 
 case class Template(name: String)

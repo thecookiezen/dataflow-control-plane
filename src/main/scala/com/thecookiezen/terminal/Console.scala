@@ -72,10 +72,10 @@ class Terminal[F[_]: Monad](console: Console[F]) {
       for {
         command <- promptWithMsg(msg)
         result <- command match {
+                   case Quit              => Monad[F].pure(Quit)
                    case ShowHelp          => loop(config)(Messages.help)
                    case ShowConfiguration => loop(config)(Messages.displayConfig(config))
                    case InvalidInput      => loop(config)(Messages.invalidInputMsg)
-                   case Quit              => Monad[F].pure(Quit)
                  }
       } yield result
 
@@ -90,6 +90,4 @@ class Terminal[F[_]: Monad](console: Console[F]) {
       _   <- console.putStrLn(msg)
       msg <- prompt
     } yield msg
-
-  private val quit: Command => Boolean = _ == Quit
 }
